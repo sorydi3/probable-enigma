@@ -62,7 +62,7 @@ fid=fopen(sprintf(VOCopts.clsrespath,'comp1',cls),'w');
 % classify each image
 tic;
 
-classifier.mdl = fitcknn(classifier.FD.',classifier.gt,'NumNeighbors',5,'Standardize',1);
+classifier.mdl = fitcknn(classifier.FD.',classifier.gt,'NumNeighbors',2,'Standardize',1);
 %classifier.mdl =fitcsvm(classifier.FD.',classifier.gt); %TRAIN THE CLASSIFIER
 
 for i=1:length(ids)
@@ -96,20 +96,24 @@ fclose(fid);
 
 % trivial feature extractor: compute mean RGB
 function fd = extractfd(VOCopts,I)
-    net =alexnet ;
+    net =resnet18;
     inputSize = net.Layers(1).InputSize;
     augimdsTrain = augmentedImageDatastore(inputSize(1:2),I);
-    layer = 'fc7';
-fd = activations(net,augimdsTrain,layer,'OutputAs','rows')
+    layer = 'fc7'; 
+    %fd = activations(net,augimdsTrain,layer,'OutputAs','rows')
+    sz = net.Layers(1).InputSize;
+    I = imresize(I,sz(1:2));
+    [label,fd]= classify(net,I);
+    disp(fd);
 %fd=sque    eze(sum(sum(double(I)))/(size(I,1)*size(I,2)));
 
 % trivial classifier: compute ratio of L2 distance betweeen
 % nearest positive (class) feature vector and nearest negative (non-class)
 % feature vector
 function c = classify(VOCopts,classifier,fd)
- [label,c,cost]=predict(classifier.mdl,fd.');
+ [label,c,cost]=predict(classifier.mdl,fd);
  disp(c);
- c = max(c);
+ c =c(2);
 
 
 
