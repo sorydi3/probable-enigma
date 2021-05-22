@@ -84,7 +84,7 @@ for i=1:length(ids)
     end
 
     % compute confidence of positive classification
-    c=classify(VOCopts,classifier,fd);
+    c=classify_(VOCopts,classifier,fd);
     
     % write to results file
     fprintf(fid,'%s %f\n',ids{i},c);
@@ -110,7 +110,7 @@ function fd = extractfd(VOCopts,I)
 % trivial classifier: compute ratio of L2 distance betweeen
 % nearest positive (class) feature vector and nearest negative (non-class)
 % feature vector
-function c = classify(VOCopts,classifier,fd)
+function c = classify_(VOCopts,classifier,fd)
  [label,c,cost]=predict(classifier.mdl,fd);
  disp(c);
  c =c(2);
