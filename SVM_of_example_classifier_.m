@@ -1,4 +1,4 @@
-function SVM_of_example_classifier
+function KNN_of_example_classifier
 
 % change this path if you install the VOC code elsewhere
 addpath([cd '/VOCcode']);
@@ -14,7 +14,6 @@ for i=1:VOCopts.nclasses
     [fp,tp,auc]=VOCroc(VOCopts,'comp1',cls,true);   % compute and display ROC
     
     if i<VOCopts.nclasses
-        
         fprintf('press any key to continue with next class...\n');
         pause;
     end
@@ -61,9 +60,8 @@ fid=fopen(sprintf(VOCopts.clsrespath,'comp1',cls),'w');
 
 % classify each image
 tic;
-
-classifier.mdl = fitcknn(classifier.FD.',classifier.gt,'NumNeighbors',250,'Standardize',1);
-%classifier.mdl =fitcsvm(classifier.FD.',classifier.gt); %TRAIN THE CLASSIFIER
+%classifier.mdl = fitcknn(classifier.FD.',classifier.gt,'NumNeighbors',250,'Standardize',1);
+classifier.mdl =fitcsvm(classifier.FD.',classifier.gt); %TRAIN THE CLASSIFIER
 
 for i=1:length(ids)
     % display progress
@@ -84,8 +82,7 @@ for i=1:length(ids)
     end
 
     % compute confidence of positive classification
-    c=classify(VOCopts,classifier,fd);
-    
+    c=classify_(VOCopts,classifier,fd);
     % write to results file
     fprintf(fid,'%s %f\n',ids{i},c);
 end
@@ -96,20 +93,24 @@ fclose(fid);
 
 % trivial feature extractor: compute mean RGB
 function fd = extractfd(VOCopts,I)
-    net = ;
+    net = resnet18;
     inputSize = net.Layers(1).InputSize;
     augimdsTrain = augmentedImageDatastore(inputSize(1:2),I);
-    layer = 'fc7';
-fd = activations(net,augimdsTrain,layer,'OutputAs','rows')
+    layer = 'fc7'; 
+    %fd = activations(net,augimdsTrain,layer,'OutputAs','rows')
+    sz = net.Layers(1).InputSize;
+    I = imresize(I,sz(1:2));
+    [label,fd]= classify(net,I);
+    
+    disp(fd);
 %fd=sque    eze(sum(sum(double(I)))/(size(I,1)*size(I,2)));
 
 % trivial classifier: compute ratio of L2 distance betweeen
 % nearest positive (class) feature vector and nearest negative (non-class)
 % feature vector
-function c = classify(VOCopts,classifier,fd)
- [label,c,cost]=predict(classifier.mdl,fd.');
- disp(c);
- c = max(c);
+function c = classify_(VOCopts,classifier,fd)
+ [label,c]= predict(classifier.mdl,fd);
+ c = c(2);
 
 
 
